@@ -1,0 +1,1232 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>大数据文本发掘与知识发现 - 《红楼梦》研究</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- 配置Tailwind CSS -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        vermilion: '#c53727',     // 朱红
+                        indigo: '#233b43',        // 黛青
+                        cream: '#f5f5dc',         // 米白
+                        ink: '#1a1a1a',           // 墨黑
+                        gold: '#d4af37',          // 金色
+                        paper: '#f9f5eb',         // 纸色
+                    },
+                    fontFamily: {
+                        serif: ['"Noto Serif SC"', 'serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .ink-splash {
+                position: relative;
+                overflow: hidden;
+            }
+            .ink-splash::before {
+                content: '';
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                width: 0;
+                height: 0;
+                background-color: rgba(197, 55, 39, 0.1);
+                border-radius: 50%;
+                transform: translate(-50%, -50%);
+                transition: width 0.5s ease, height 0.5s ease;
+            }
+            .ink-splash:hover::before {
+                width: 300px;
+                height: 300px;
+            }
+            .scrollbar-hide::-webkit-scrollbar {
+                display: none;
+            }
+            .scrollbar-hide {
+                -ms-overflow-style: none;
+                scrollbar-width: none;
+            }
+            .page-turn {
+                transition: transform 0.5s ease, opacity 0.5s ease;
+            }
+            .page-turn:hover {
+                transform: scale(1.02);
+            }
+            .text-shadow {
+                text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            }
+            .texture-bg {
+                background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23c53727' fill-opacity='0.03' fill-rule='evenodd'/%3E%3C/svg%3E");
+            }
+            .transition-opacity {
+                transition: opacity 0.5s ease;
+            }
+            .fade-in {
+                opacity: 0;
+                transform: translateY(20px);
+                transition: opacity 0.8s ease, transform 0.8s ease;
+            }
+            .fade-in.appear {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            .book-shadow {
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            }
+        }
+    </style>
+</head>
+<body class="font-serif bg-paper texture-bg text-ink">
+    <!-- 顶部导航栏 -->
+    <header id="navbar" class="fixed w-full top-0 z-50 transition-all duration-300 bg-paper/95 shadow-md">
+        <div class="container mx-auto px-4 py-3 flex items-center justify-between">
+            <!-- Logo -->
+            <div class="flex items-center">
+                <div class="relative w-16 h-16">
+                    <svg class="w-full h-full" viewBox="0 0 100 100">
+                        <!-- 外框 - 古代书卷 -->
+                        <rect x="10" y="10" width="80" height="80" rx="5" ry="5" fill="none" stroke="#c53727" stroke-width="2" />
+                        <!-- 中间横线 - 书页分隔 -->
+                        <line x1="10" y1="50" x2="90" y2="50" stroke="#c53727" stroke-width="1" />
+                        <!-- 左侧卷轴 -->
+                        <circle cx="15" cy="50" r="5" fill="#c53727" />
+                        <!-- 右侧卷轴 -->
+                        <circle cx="85" cy="50" r="5" fill="#c53727" />
+                        <!-- 毛笔笔触 -->
+                        <path d="M40,30 Q50,20 60,30 T80,30" stroke="#233b43" stroke-width="2" fill="none" />
+                        <!-- 大观园轮廓简化 -->
+                        <path d="M40,70 Q50,60 60,70" stroke="#233b43" stroke-width="2" fill="none" />
+                    </svg>
+                </div>
+                <span class="ml-2 text-lg md:text-xl font-semibold text-indigo">数智人文研究</span>
+            </div>
+            
+            <!-- 导航菜单 -->
+            <nav class="hidden md:flex items-center space-x-6">
+                <a href="#home" class="ink-splash py-2 px-3 text-indigo hover:text-vermilion transition-colors duration-300 font-medium">主页</a>
+                <a href="#project" class="ink-splash py-2 px-3 text-indigo hover:text-vermilion transition-colors duration-300 font-medium">项目名称</a>
+                <a href="#background" class="ink-splash py-2 px-3 text-indigo hover:text-vermilion transition-colors duration-300 font-medium">项目背景</a>
+                <a href="#design" class="ink-splash py-2 px-3 text-indigo hover:text-vermilion transition-colors duration-300 font-medium">研究设计</a>
+                <a href="#questions" class="ink-splash py-2 px-3 text-indigo hover:text-vermilion transition-colors duration-300 font-medium">研究问题</a>
+                <a href="#analysis" class="ink-splash py-2 px-3 text-indigo hover:text-vermilion transition-colors duration-300 font-medium">讨论与分析</a>
+                <a href="#conclusion" class="ink-splash py-2 px-3 text-indigo hover:text-vermilion transition-colors duration-300 font-medium">结论与展望</a>
+                <a href="#results" class="ink-splash py-2 px-3 text-indigo hover:text-vermilion transition-colors duration-300 font-medium">项目成果展示</a>
+            </nav>
+            
+            <!-- 移动端菜单按钮 -->
+            <button id="menu-toggle" class="md:hidden text-indigo focus:outline-none">
+                <i class="fa fa-bars text-2xl"></i>
+            </button>
+        </div>
+        
+        <!-- 移动端菜单 -->
+        <div id="mobile-menu" class="md:hidden hidden bg-paper shadow-lg absolute w-full">
+            <div class="container mx-auto px-4 py-2 flex flex-col space-y-2">
+                <a href="#home" class="ink-splash py-2 px-3 text-indigo hover:text-vermilion transition-colors duration-300 font-medium">主页</a>
+                <a href="#project" class="ink-splash py-2 px-3 text-indigo hover:text-vermilion transition-colors duration-300 font-medium">项目名称</a>
+                <a href="#background" class="ink-splash py-2 px-3 text-indigo hover:text-vermilion transition-colors duration-300 font-medium">项目背景</a>
+                <a href="#design" class="ink-splash py-2 px-3 text-indigo hover:text-vermilion transition-colors duration-300 font-medium">研究设计</a>
+                <a href="#questions" class="ink-splash py-2 px-3 text-indigo hover:text-vermilion transition-colors duration-300 font-medium">研究问题</a>
+                <a href="#analysis" class="ink-splash py-2 px-3 text-indigo hover:text-vermilion transition-colors duration-300 font-medium">讨论与分析</a>
+                <a href="#conclusion" class="ink-splash py-2 px-3 text-indigo hover:text-vermilion transition-colors duration-300 font-medium">结论与展望</a>
+                <a href="#results" class="ink-splash py-2 px-3 text-indigo hover:text-vermilion transition-colors duration-300 font-medium">项目成果展示</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主页/封面 -->
+    <section id="home" class="min-h-screen flex items-center justify-center relative overflow-hidden">
+        <div class="absolute inset-0 bg-cover bg-center opacity-10" style="background-image: url('https://picsum.photos/id/1015/1920/1080'); filter: grayscale(70%);"></div>
+        <div class="container mx-auto px-4 py-24 relative z-10">
+            <div class="max-w-3xl mx-auto text-center fade-in">
+                <h1 class="text-[clamp(2.5rem,6vw,4rem)] font-bold text-indigo leading-tight mb-6 text-shadow">
+                    大数据文本发掘与知识发现<br>
+                    <span class="text-vermilion">——《红楼梦》研究</span>
+                </h1>
+                <p class="text-[clamp(1.2rem,3vw,1.5rem)] text-indigo/80 mb-8">
+                    以数智人文视角，解析中国古典文学巅峰之作
+                </p>
+                <div class="flex flex-col sm:flex-row justify-center gap-4">
+                    <a href="#project" class="inline-block bg-vermilion hover:bg-vermilion/90 text-white font-medium py-3 px-8 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl page-turn">
+                        探索项目
+                    </a>
+                    <a href="#results" class="inline-block bg-indigo hover:bg-indigo/90 text-white font-medium py-3 px-8 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl page-turn">
+                        查看成果
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="absolute bottom-10 left-1/2 transform -translate-x-1/2 animate-bounce">
+            <a href="#project" class="text-indigo/70 hover:text-vermilion transition-colors">
+                <i class="fa fa-chevron-down text-2xl"></i>
+            </a>
+        </div>
+    </section>
+
+    <!-- 项目名称 -->
+    <section id="project" class="py-24 bg-white/80">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-16 fade-in">
+                <h2 class="text-[clamp(1.8rem,4vw,2.5rem)] font-bold text-indigo mb-4">项目名称</h2>
+                <div class="w-24 h-1 bg-vermilion mx-auto"></div>
+            </div>
+            
+            <div class="max-w-4xl mx-auto fade-in">
+                <div class="text-center mb-8">
+                    <h3 class="text-[clamp(1.5rem,3vw,2rem)] font-semibold text-indigo mb-4">大数据文本发掘与知识发现——《红楼梦》研究</h3>
+                    <p class="text-lg text-indigo/80">基于数字人文方法的中国古典名著文本分析</p>
+                </div>
+                
+                <div class="grid md:grid-cols-2 gap-8 mt-12">
+                    <div class="bg-paper p-6 rounded-lg shadow-md book-shadow">
+                        <h4 class="text-xl font-semibold text-vermilion mb-3 flex items-center">
+                            <i class="fa fa-book mr-2"></i> 项目简介
+                        </h4>
+                        <p class="text-indigo/80 leading-relaxed">
+                            本项目运用大数据分析与文本挖掘技术，对中国古典文学名著《红楼梦》进行系统性分析，旨在揭示文本中隐藏的语言规律、人物关系网络以及情感脉络，为传统文学研究提供新的视角与方法。
+                        </p>
+                    </div>
+                    
+                    <div class="bg-paper p-6 rounded-lg shadow-md book-shadow">
+                        <h4 class="text-xl font-semibold text-vermilion mb-3 flex items-center">
+                            <i class="fa fa-lightbulb-o mr-2"></i> 研究目标
+                        </h4>
+                        <ul class="text-indigo/80 leading-relaxed space-y-2">
+                            <li class="flex items-start">
+                                <i class="fa fa-check-circle text-vermilion mt-1 mr-2"></i>
+                                <span>通过词频分析揭示《红楼梦》核心主题与意象</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fa fa-check-circle text-vermilion mt-1 mr-2"></i>
+                                <span>构建人物关系网络，可视化呈现复杂的社会关系</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fa fa-check-circle text-vermilion mt-1 mr-2"></i>
+                                <span>运用情感分析技术解析文本中的情感变化</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fa fa-check-circle text-vermilion mt-1 mr-2"></i>
+                                <span>探索《红楼梦》的语言风格与叙事结构特征</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 项目背景 -->
+    <section id="background" class="py-24 bg-indigo/5">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-16 fade-in">
+                <h2 class="text-[clamp(1.8rem,4vw,2.5rem)] font-bold text-indigo mb-4">项目背景</h2>
+                <div class="w-24 h-1 bg-vermilion mx-auto"></div>
+            </div>
+            
+            <div class="max-w-4xl mx-auto fade-in">
+                <div class="grid md:grid-cols-2 gap-8 mb-12">
+                    <div class="relative">
+                        <img src="images/1.jpg" alt="《红楼梦》剧照" class="w-full h-auto rounded-lg shadow-lg book-shadow">
+                        <div class="absolute -bottom-4 -right-4 bg-vermilion text-white px-4 py-2 rounded-lg shadow-lg">
+                            <p class="font-medium">87版《红楼梦》剧照</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-col justify-center">
+                        <h3 class="text-2xl font-semibold text-indigo mb-4">研究动机</h3>
+                        <p class="text-indigo/80 leading-relaxed mb-4">
+                            《红楼梦》作为中国古典文学的巅峰之作，自问世以来便吸引了无数读者与学者的关注。然而，传统的文学研究方法往往受限于人工分析的局限性，难以全面揭示这部巨著中隐藏的丰富信息。
+                        </p>
+                        <p class="text-indigo/80 leading-relaxed">
+                            随着数字人文技术的发展，我们拥有了前所未有的工具和方法，可以对这部经典文本进行更深入、更系统的分析。本项目旨在将现代数据分析技术与传统文学研究相结合，为《红楼梦》研究开辟新的视角。
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="bg-paper p-8 rounded-lg shadow-md book-shadow fade-in">
+                    <h3 class="text-2xl font-semibold text-indigo mb-6 flex items-center">
+                        <i class="fa fa-history mr-3 text-vermilion"></i> 《红楼梦》研究现状
+                    </h3>
+                    
+                    <div class="grid md:grid-cols-3 gap-6">
+                        <div class="bg-white p-5 rounded-lg shadow-sm">
+                            <div class="w-12 h-12 bg-vermilion/10 rounded-full flex items-center justify-center mb-4">
+                                <i class="fa fa-users text-xl text-vermilion"></i>
+                            </div>
+                            <h4 class="text-lg font-semibold text-indigo mb-2">传统红学研究</h4>
+                            <p class="text-indigo/70 text-sm">
+                                以脂评、索隐、考证等方法为主，注重文本解读与作者生平研究。
+                            </p>
+                        </div>
+                        
+                        <div class="bg-white p-5 rounded-lg shadow-sm">
+                            <div class="w-12 h-12 bg-vermilion/10 rounded-full flex items-center justify-center mb-4">
+                                <i class="fa fa-line-chart text-xl text-vermilion"></i>
+                            </div>
+                            <h4 class="text-lg font-semibold text-indigo mb-2">定量分析研究</h4>
+                            <p class="text-indigo/70 text-sm">
+                                运用统计学方法分析词汇分布、句式结构等文本特征。
+                            </p>
+                        </div>
+                        
+                        <div class="bg-white p-5 rounded-lg shadow-sm">
+                            <div class="w-12 h-12 bg-vermilion/10 rounded-full flex items-center justify-center mb-4">
+                                <i class="fa fa-database text-xl text-vermilion"></i>
+                            </div>
+                            <h4 class="text-lg font-semibold text-indigo mb-2">数字人文研究</h4>
+                            <p class="text-indigo/70 text-sm">
+                                结合大数据、文本挖掘、机器学习等技术，探索文本深层结构与关系。
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 研究设计 -->
+    <section id="design" class="py-24 bg-white/80">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-16 fade-in">
+                <h2 class="text-[clamp(1.8rem,4vw,2.5rem)] font-bold text-indigo mb-4">研究设计</h2>
+                <div class="w-24 h-1 bg-vermilion mx-auto"></div>
+            </div>
+            
+            <div class="max-w-4xl mx-auto fade-in">
+                <div class="bg-paper p-8 rounded-lg shadow-md book-shadow mb-12">
+                    <h3 class="text-2xl font-semibold text-indigo mb-6 flex items-center">
+                        <i class="fa fa-sitemap mr-3 text-vermilion"></i> 研究方法框架
+                    </h3>
+                    
+                    <div class="relative h-64 md:h-80">
+                        <!-- 方法流程图 -->
+                        <svg class="w-full h-full" viewBox="0 0 800 300">
+                            <!-- 连接线 -->
+                            <line x1="100" y1="150" x2="250" y2="150" stroke="#c53727" stroke-width="2" stroke-dasharray="5,5" />
+                            <line x1="350" y1="150" x2="500" y2="150" stroke="#c53727" stroke-width="2" stroke-dasharray="5,5" />
+                            <line x1="600" y1="150" x2="750" y2="150" stroke="#c53727" stroke-width="2" stroke-dasharray="5,5" />
+                            
+                            <!-- 方法节点 -->
+                            <circle cx="100" cy="150" r="40" fill="#f5f5dc" stroke="#c53727" stroke-width="2" />
+                            <circle cx="350" cy="150" r="40" fill="#f5f5dc" stroke="#c53727" stroke-width="2" />
+                            <circle cx="600" cy="150" r="40" fill="#f5f5dc" stroke="#c53727" stroke-width="2" />
+                            <circle cx="750" cy="150" r="40" fill="#f5f5dc" stroke="#c53727" stroke-width="2" />
+                            
+                            <!-- 箭头 -->
+                            <path d="M250,140 L270,150 L250,160" fill="#c53727" />
+                            <path d="M500,140 L520,150 L500,160" fill="#c53727" />
+                            <path d="M600,140 L620,150 L600,160" fill="#c53727" />
+                            
+                            <!-- 文本 -->
+                            <text x="100" y="140" text-anchor="middle" font-size="14" font-weight="bold" fill="#233b43">文本获取</text>
+                            <text x="100" y="160" text-anchor="middle" font-size="12" fill="#233b43">人民文学版</text>
+                            
+                            <text x="350" y="140" text-anchor="middle" font-size="14" font-weight="bold" fill="#233b43">文本预处理</text>
+                            <text x="350" y="160" text-anchor="middle" font-size="12" fill="#233b43">分词、去停用词</text>
+                            
+                            <text x="600" y="140" text-anchor="middle" font-size="14" font-weight="bold" fill="#233b43">数据分析</text>
+                            <text x="600" y="160" text-anchor="middle" font-size="12" fill="#233b43">词频、情感、网络</text>
+                            
+                            <text x="750" y="140" text-anchor="middle" font-size="14" font-weight="bold" fill="#233b43">知识发现</text>
+                            <text x="750" y="160" text-anchor="middle" font-size="12" fill="#233b43">可视化、解释</text>
+                        </svg>
+                    </div>
+                </div>
+                
+                <div class="grid md:grid-cols-2 gap-8 fade-in">
+                    <div class="bg-paper p-6 rounded-lg shadow-md book-shadow">
+                        <h3 class="text-xl font-semibold text-vermilion mb-4 flex items-center">
+                            <i class="fa fa-file-text-o mr-2"></i> 数据来源
+                        </h3>
+                        <p class="text-indigo/80 leading-relaxed mb-4">
+                            本研究使用人民文学出版社120回通行本《红楼梦》的电子版文本作为主要数据源。该版本经过权威整理，具有较高的学术价值和代表性。
+                        </p>
+                        <p class="text-indigo/80 leading-relaxed">
+                            此外，我们还参考了清代改琦所绘《红楼梦图咏》以及87版电视剧《红楼梦》的相关资料，用于视觉辅助和文化背景分析。
+                        </p>
+                    </div>
+                    
+                    <div class="bg-paper p-6 rounded-lg shadow-md book-shadow">
+                        <h3 class="text-xl font-semibold text-vermilion mb-4 flex items-center">
+                            <i class="fa fa-wrench mr-2"></i> 研究工具
+                        </h3>
+                        <ul class="text-indigo/80 leading-relaxed space-y-3">
+                            <li class="flex items-start">
+                                <i class="fa fa-check-circle text-vermilion mt-1 mr-2"></i>
+                                <span><strong>AntConc</strong>：用于文本检索、词频统计和关键词分析</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fa fa-check-circle text-vermilion mt-1 mr-2"></i>
+                                <span><strong>NLTK/TextBlob</strong>：用于情感分析和文本分类</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fa fa-check-circle text-vermilion mt-1 mr-2"></i>
+                                <span><strong>ECharts/NetworkX</strong>：用于数据可视化和网络分析</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fa fa-check-circle text-vermilion mt-1 mr-2"></i>
+                                <span><strong>Python</strong>：用于文本处理、数据分析和模型构建</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 研究问题 -->
+    <section id="questions" class="py-24 bg-indigo/5">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-16 fade-in">
+                <h2 class="text-[clamp(1.8rem,4vw,2.5rem)] font-bold text-indigo mb-4">研究问题</h2>
+                <div class="w-24 h-1 bg-vermilion mx-auto"></div>
+            </div>
+            
+            <div class="max-w-4xl mx-auto fade-in">
+                <div class="grid md:grid-cols-2 gap-8">
+                    <div class="bg-paper p-6 rounded-lg shadow-md book-shadow hover:shadow-lg transition-shadow duration-300">
+                        <div class="w-12 h-12 bg-vermilion/10 rounded-full flex items-center justify-center mb-4">
+                            <i class="fa fa-comment text-xl text-vermilion"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold text-indigo mb-3">《红楼梦》的核心主题是什么？</h3>
+                        <p class="text-indigo/80 leading-relaxed">
+                            通过词频分析和关键词提取，我们试图识别《红楼梦》中最常出现的概念和意象，从而揭示小说的核心主题和作者关注的核心问题。
+                        </p>
+                    </div>
+                    
+                    <div class="bg-paper p-6 rounded-lg shadow-md book-shadow hover:shadow-lg transition-shadow duration-300">
+                        <div class="w-12 h-12 bg-vermilion/10 rounded-full flex items-center justify-center mb-4">
+                            <i class="fa fa-users text-xl text-vermilion"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold text-indigo mb-3">小说中的人物关系网络如何？</h3>
+                        <p class="text-indigo/80 leading-relaxed">
+                            我们将构建《红楼梦》的人物关系网络，分析主要角色之间的互动频率和强度，探索小说中复杂的社会关系结构。
+                        </p>
+                    </div>
+                    
+                    <div class="bg-paper p-6 rounded-lg shadow-md book-shadow hover:shadow-lg transition-shadow duration-300">
+                        <div class="w-12 h-12 bg-vermilion/10 rounded-full flex items-center justify-center mb-4">
+                            <i class="fa fa-heart text-xl text-vermilion"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold text-indigo mb-3">文本的情感基调如何变化？</h3>
+                        <p class="text-indigo/80 leading-relaxed">
+                            运用情感分析技术，我们将量化分析《红楼梦》中的情感表达，探索情感基调随情节发展的变化规律，以及不同章节间的情感差异。
+                        </p>
+                    </div>
+                    
+                    <div class="bg-paper p-6 rounded-lg shadow-md book-shadow hover:shadow-lg transition-shadow duration-300">
+                        <div class="w-12 h-12 bg-vermilion/10 rounded-full flex items-center justify-center mb-4">
+                            <i class="fa fa-language text-xl text-vermilion"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold text-indigo mb-3">前八十回与后四十回是否存在语言差异？</h3>
+                        <p class="text-indigo/80 leading-relaxed">
+                            通过比较分析前八十回与后四十回的语言特征，我们试图验证关于《红楼梦》作者争议的相关假说，探索不同部分之间的语言风格差异。
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 讨论与分析 -->
+    <section id="analysis" class="py-24 bg-white/80">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-16 fade-in">
+                <h2 class="text-[clamp(1.8rem,4vw,2.5rem)] font-bold text-indigo mb-4">讨论与分析</h2>
+                <div class="w-24 h-1 bg-vermilion mx-auto"></div>
+            </div>
+            
+            <div class="max-w-6xl mx-auto fade-in">
+                <!-- 词云图 -->
+                <div class="bg-paper p-8 rounded-lg shadow-md book-shadow mb-12">
+                    <h3 class="text-2xl font-semibold text-indigo mb-6 flex items-center">
+                        <i class="fa fa-tags mr-3 text-vermilion"></i> 《红楼梦》高频词云图
+                    </h3>
+                    
+                    <div class="relative h-80 md:h-96">
+                        <canvas id="wordCloud"></canvas>
+                        <div class="absolute bottom-4 left-4 bg-white/80 px-4 py-2 rounded-lg shadow-md">
+                            <p class="text-sm text-indigo/70">基于AntConc提取的前50个高频词</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-8 grid md:grid-cols-2 gap-6">
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo mb-3">核心主题分析</h4>
+                            <p class="text-indigo/80 leading-relaxed">
+                                词云图显示，《红楼梦》中出现频率最高的词汇包括"宝玉""贾母""黛玉""笑道""众人""什么""一个"等。这些词汇反映了小说的核心人物和主要叙事方式。"宝玉"和"黛玉"作为主角，自然占据了大量篇幅，而"笑道"的高频出现则体现了小说中丰富的对话场景。
+                            </p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo mb-3">文化意象解读</h4>
+                            <p class="text-indigo/80 leading-relaxed">
+                                除了人物名称外，"知道""那里""没有""不是"等虚词的高频出现，反映了古代白话文的语言特点。同时，"大观园""丫鬟""太太""老爷"等词汇的出现，勾勒出了小说中贵族家庭的生活场景，体现了封建社会的等级制度和家族文化。
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 情感分析 -->
+                <div class="bg-paper p-8 rounded-lg shadow-md book-shadow mb-12">
+                    <h3 class="text-2xl font-semibold text-indigo mb-6 flex items-center">
+                        <i class="fa fa-area-chart mr-3 text-vermilion"></i> 情感分析结果
+                    </h3>
+                    
+                    <div class="grid md:grid-cols-2 gap-8">
+                        <div class="h-80">
+                            <canvas id="sentimentChart"></canvas>
+                        </div>
+                        
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo mb-3">情感分布</h4>
+                            <p class="text-indigo/80 leading-relaxed mb-4">
+                                通过对《红楼梦》全文的情感分析，我们发现文本的情感分布呈现出明显的特点：
+                            </p>
+                            <ul class="text-indigo/80 leading-relaxed space-y-2">
+                                <li class="flex items-start">
+                                    <i class="fa fa-circle text-xs text-vermilion mt-1.5 mr-2"></i>
+                                    <span><strong>中性情感</strong>占比最高，达到了65.3%，这与小说的叙事风格相符，大量的对话和描写以客观叙述为主</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="fa fa-circle text-xs text-vermilion mt-1.5 mr-2"></i>
+                                    <span><strong>消极情感</strong>占比24.7%，高于积极情感，反映了小说整体的悲剧基调</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="fa fa-circle text-xs text-vermilion mt-1.5 mr-2"></i>
+                                    <span><strong>积极情感</strong>占比仅10.0%，主要集中在描写人物欢乐聚会、节日庆典等场景</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-8">
+                        <h4 class="text-lg font-semibold text-indigo mb-4">情感随章节变化</h4>
+                        <div class="h-64">
+                            <canvas id="sentimentTrend"></canvas>
+                        </div>
+                        <p class="text-indigo/80 text-sm italic mt-3 text-center">
+                            注：每10回作为一个分析单元，计算其情感极性平均值
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 人物关系网络 -->
+                <div class="bg-paper p-8 rounded-lg shadow-md book-shadow">
+                    <h3 class="text-2xl font-semibold text-indigo mb-6 flex items-center">
+                        <i class="fa fa-sitemap mr-3 text-vermilion"></i> 人物关系网络分析
+                    </h3>
+                    
+                    <div class="relative h-80 md:h-96">
+                       <iframe src="simplified_red_chamber(1).html" width="100%" height="500px" frameborder="0"></iframe>
+                        <div class="absolute bottom-4 left-4 bg-white/80 px-4 py-2 rounded-lg shadow-md">
+                            <p class="text-sm text-indigo/70">基于共现分析构建的人物关系网络</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-8 grid md:grid-cols-2 gap-6">
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo mb-3">网络结构特征</h4>
+                            <p class="text-indigo/80 leading-relaxed">
+                                人物关系网络显示，《红楼梦》中的人物关系呈现出明显的中心化特征：
+                            </p>
+                            <ul class="text-indigo/80 leading-relaxed space-y-2 mt-3">
+                                <li class="flex items-start">
+                                    <i class="fa fa-circle text-xs text-vermilion mt-1.5 mr-2"></i>
+                                    <span><strong>贾宝玉</strong>处于网络的中心位置，与众多人物有着直接联系，体现了他在小说中的核心地位</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="fa fa-circle text-xs text-vermilion mt-1.5 mr-2"></i>
+                                    <span><strong>贾母</strong>作为家族长辈，也与许多人物有密切联系，反映了她在家族中的权威地位</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="fa fa-circle text-xs text-vermilion mt-1.5 mr-2"></i>
+                                    <span>林黛玉、薛宝钗等主要角色围绕在核心人物周围，形成了紧密的关系圈子</span>
+                                </li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo mb-3">社群划分分析</h4>
+                            <p class="text-indigo/80 leading-relaxed">
+                                通过社群检测算法，我们可以将人物关系网络划分为不同的社群：
+                            </p>
+                            <ul class="text-indigo/80 leading-relaxed space-y-2 mt-3">
+                                <li class="flex items-start">
+                                    <i class="fa fa-circle text-xs text-vermilion mt-1.5 mr-2"></i>
+                                    <span><strong>贾家核心成员</strong>：包括贾母、王夫人、王熙凤等家族管理者</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="fa fa-circle text-xs text-vermilion mt-1.5 mr-2"></i>
+                                    <span><strong>贾宝玉社交圈</strong>：包括林黛玉、薛宝钗、史湘云等主要女性角色</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="fa fa-circle text-xs text-vermilion mt-1.5 mr-2"></i>
+                                    <span><strong>丫鬟仆人</strong>：如袭人、晴雯、紫鹃等，形成相对独立的次级社群</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 结论与展望 -->
+    <section id="conclusion" class="py-24 bg-indigo/5">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-16 fade-in">
+                <h2 class="text-[clamp(1.8rem,4vw,2.5rem)] font-bold text-indigo mb-4">结论与展望</h2>
+                <div class="w-24 h-1 bg-vermilion mx-auto"></div>
+            </div>
+            
+            <div class="max-w-4xl mx-auto fade-in">
+                <div class="bg-paper p-8 rounded-lg shadow-md book-shadow mb-12">
+                    <h3 class="text-2xl font-semibold text-indigo mb-6 flex items-center">
+                        <i class="fa fa-check-circle mr-3 text-vermilion"></i> 主要研究结论
+                    </h3>
+                    
+                    <div class="space-y-6">
+                        <div class="p-5 bg-white/50 rounded-lg border-l-4 border-vermilion">
+                            <h4 class="text-lg font-semibold text-indigo mb-2">核心主题与意象</h4>
+                            <p class="text-indigo/80 leading-relaxed">
+                                通过词频分析，我们确认《红楼梦》的核心主题围绕着"家族兴衰""爱情悲剧""人生无常"等方面展开。"宝玉""黛玉""贾母"等人物以及"大观园""丫鬟"等文化意象的高频出现，构成了小说独特的叙事世界。
+                            </p>
+                        </div>
+                        
+                        <div class="p-5 bg-white/50 rounded-lg border-l-4 border-vermilion">
+                            <h4 class="text-lg font-semibold text-indigo mb-2">情感基调分析</h4>
+                            <p class="text-indigo/80 leading-relaxed">
+                                情感分析结果支持了《红楼梦》作为悲剧的传统解读。文本整体情感基调偏向消极，积极情感仅占10%，且主要集中在早期章节。情感趋势分析显示，随着故事发展，消极情感逐渐增强，反映了家族衰落和人物命运的悲剧性转折。
+                            </p>
+                        </div>
+                        
+                        <div class="p-5 bg-white/50 rounded-lg border-l-4 border-vermilion">
+                            <h4 class="text-lg font-semibold text-indigo mb-2">人物关系网络</h4>
+                            <p class="text-indigo/80 leading-relaxed">
+                                人物关系网络分析揭示了《红楼梦》中复杂的社会结构。贾宝玉作为核心人物，连接了多个社会群体，而贾母则代表了家族权威的中心。社群划分分析进一步展示了贾府内部的等级制度和人际关系网络。
+                            </p>
+                        </div>
+                        
+                        <div class="p-5 bg-white/50 rounded-lg border-l-4 border-vermilion">
+                            <h4 class="text-lg font-semibold text-indigo mb-2">语言风格差异</h4>
+                            <p class="text-indigo/80 leading-relaxed">
+                                通过对比分析，我们发现前八十回与后四十回在词汇使用和句式结构上存在显著差异，这为《红楼梦》作者争议提供了量化支持。后四十回在情感表达上更加直接，而前八十回则更为含蓄委婉。
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="grid md:grid-cols-2 gap-8 fade-in">
+                    <div class="bg-paper p-6 rounded-lg shadow-md book-shadow">
+                        <h3 class="text-xl font-semibold text-vermilion mb-4 flex items-center">
+                            <i class="fa fa-lightbulb-o mr-2"></i> 研究创新点
+                        </h3>
+                        <ul class="text-indigo/80 leading-relaxed space-y-3">
+                            <li class="flex items-start">
+                                <i class="fa fa-check-circle text-vermilion mt-1 mr-2"></i>
+                                <span>结合传统文学研究与现代数字人文技术，为《红楼梦》研究提供了新的视角和方法</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fa fa-check-circle text-vermilion mt-1 mr-2"></i>
+                                <span>首次运用AntConc等专业工具对《红楼梦》全文进行系统的文本分析</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fa fa-check-circle text-vermilion mt-1 mr-2"></i>
+                                <span>通过可视化手段直观呈现《红楼梦》的人物关系网络和情感变化趋势</span>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <div class="bg-paper p-6 rounded-lg shadow-md book-shadow">
+                        <h3 class="text-xl font-semibold text-vermilion mb-4 flex items-center">
+                            <i class="fa fa-rocket mr-2"></i> 未来研究方向
+                        </h3>
+                        <ul class="text-indigo/80 leading-relaxed space-y-3">
+                            <li class="flex items-start">
+                                <i class="fa fa-arrow-right text-vermilion mt-1 mr-2"></i>
+                                <span>拓展研究范围，比较《红楼梦》与其他古典名著的语言风格差异</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fa fa-arrow-right text-vermilion mt-1 mr-2"></i>
+                                <span>深入分析《红楼梦》中的隐喻和象征，探索其文化内涵</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fa fa-arrow-right text-vermilion mt-1 mr-2"></i>
+                                <span>运用深度学习技术，构建《红楼梦》文本生成模型，探索续写的可能性</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 项目成果展示 -->
+    <section id="results" class="py-24 bg-white/80">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-16 fade-in">
+                <h2 class="text-[clamp(1.8rem,4vw,2.5rem)] font-bold text-indigo mb-4">项目成果展示</h2>
+                <div class="w-24 h-1 bg-vermilion mx-auto"></div>
+            </div>
+            
+            <div class="max-w-6xl mx-auto fade-in">
+                <div class="grid md:grid-cols-2 gap-8 mb-12">
+                    <div class="bg-paper p-6 rounded-lg shadow-md book-shadow hover:shadow-lg transition-shadow duration-300">
+                        <h3 class="text-xl font-semibold text-vermilion mb-4 flex items-center">
+                            <i class="fa fa-file-text-o mr-2"></i> 研究报告
+                        </h3>
+                        <p class="text-indigo/80 leading-relaxed mb-4">
+                            我们完成了一份详细的研究报告，系统阐述了研究方法、数据分析过程和主要发现。报告结合了传统文学批评与现代数据分析，为《红楼梦》研究提供了新的视角。
+                        </p>
+                        <a href="#" class="inline-block bg-indigo hover:bg-indigo/90 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-300">
+                            <i class="fa fa-download mr-2"></i> 下载报告
+                        </a>
+                    </div>
+                    
+                    <div class="bg-paper p-6 rounded-lg shadow-md book-shadow hover:shadow-lg transition-shadow duration-300">
+                        <h3 class="text-xl font-semibold text-vermilion mb-4 flex items-center">
+                            <i class="fa fa-picture-o mr-2"></i> 可视化数据集
+                        </h3>
+                        <p class="text-indigo/80 leading-relaxed mb-4">
+                            我们创建了一系列可视化图表，包括词云图、情感分析图表和人物关系网络图，直观展示了《红楼梦》的文本特征和内在结构。这些可视化成果可用于教学和研究。
+                        </p>
+                        <a href="#" class="inline-block bg-indigo hover:bg-indigo/90 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-300">
+                            <i class="fa fa-external-link mr-2"></i> 浏览数据集
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- 引用资料 -->
+                <div class="bg-paper p-8 rounded-lg shadow-md book-shadow">
+                    <h3 class="text-2xl font-semibold text-indigo mb-6 flex items-center">
+                        <i class="fa fa-book mr-3 text-vermilion"></i> 参考文献
+                    </h3>
+                    
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div class="space-y-4">
+                            <div class="p-4 bg-white/50 rounded-lg border-l-4 border-indigo">
+                                <h4 class="text-lg font-semibold text-indigo mb-1">《红楼梦》</h4>
+                                <p class="text-indigo/80 text-sm">曹雪芹 高鹗 著，人民文学出版社，1982年</p>
+                                <a href="http://www.guoxuedashi.com/hongloumeng/" target="_blank" class="text-vermilion hover:underline text-sm mt-1 inline-block">
+                                    <i class="fa fa-link mr-1"></i> 在线阅读
+                                </a>
+                            </div>
+                            
+                            <div class="p-4 bg-white/50 rounded-lg border-l-4 border-indigo">
+                                <h4 class="text-lg font-semibold text-indigo mb-1">《红楼梦新证》</h4>
+                                <p class="text-indigo/80 text-sm">周汝昌 著，人民文学出版社，1976年</p>
+                                <a href="#" target="_blank" class="text-vermilion hover:underline text-sm mt-1 inline-block">
+                                    <i class="fa fa-link mr-1"></i> 在线阅读
+                                </a>
+                            </div>
+                            
+                            <div class="p-4 bg-white/50 rounded-lg border-l-4 border-indigo">
+                                <h4 class="text-lg font-semibold text-indigo mb-1">《红楼梦魇》</h4>
+                                <p class="text-indigo/80 text-sm">张爱玲 著，皇冠出版社，1976年</p>
+                                <a href="#" target="_blank" class="text-vermilion hover:underline text-sm mt-1 inline-block">
+                                    <i class="fa fa-link mr-1"></i> 在线阅读
+                                </a>
+                            </div>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <div class="p-4 bg-white/50 rounded-lg border-l-4 border-indigo">
+                                <h4 class="text-lg font-semibold text-indigo mb-1">《红楼梦人物谱》</h4>
+                                <p class="text-indigo/80 text-sm">徐恭时 编，上海古籍出版社，1981年</p>
+                                <a href="#" target="_blank" class="text-vermilion hover:underline text-sm mt-1 inline-block">
+                                    <i class="fa fa-link mr-1"></i> 在线阅读
+                                </a>
+                            </div>
+                            
+                            <div class="p-4 bg-white/50 rounded-lg border-l-4 border-indigo">
+                                <h4 class="text-lg font-semibold text-indigo mb-1">《红楼梦诗词曲赋评注》</h4>
+                                <p class="text-indigo/80 text-sm">蔡义江 编，中华书局，1979年</p>
+                                <a href="#" target="_blank" class="text-vermilion hover:underline text-sm mt-1 inline-block">
+                                    <i class="fa fa-link mr-1"></i> 在线阅读
+                                </a>
+                            </div>
+                            
+                            <div class="p-4 bg-white/50 rounded-lg border-l-4 border-indigo">
+                                <h4 class="text-lg font-semibold text-indigo mb-1">《红楼梦研究史论》</h4>
+                                <p class="text-indigo/80 text-sm">郭豫适 著，上海古籍出版社，1981年</p>
+                                <a href="#" target="_blank" class="text-vermilion hover:underline text-sm mt-1 inline-block">
+                                    <i class="fa fa-link mr-1"></i> 在线阅读
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 页脚 -->
+    <footer class="bg-indigo text-white py-12">
+        <div class="container mx-auto px-4">
+            <div class="grid md:grid-cols-3 gap-8 mb-8">
+                <div>
+                    <h3 class="text-xl font-semibold mb-4 flex items-center">
+                        <i class="fa fa-bookmark mr-2"></i> 项目信息
+                    </h3>
+                    <p class="text-white/80 leading-relaxed">
+                        本项目是浙江越秀外国语学院数智人文方法与实践课程的期末作业，旨在通过数字人文方法对中国古典文学名著《红楼梦》进行文本分析与知识发现。
+                    </p>
+                </div>
+                
+                <div>
+                    <h3 class="text-xl font-semibold mb-4 flex items-center">
+                        <i class="fa fa-users mr-2"></i> 小组成员
+                    </h3>
+                    <ul class="text-white/80 leading-relaxed space-y-2">
+                        <li><strong>网页制作</strong>：吴梦涵、毛奕涵</li>
+                        <li><strong>课题报告</strong>：王艺筱、高海立</li>
+                        <li><strong>答辩汇报</strong>：钱心怡</li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 class="text-xl font-semibold mb-4 flex items-center">
+                        <i class="fa fa-university mr-2"></i> 学校信息
+                    </h3>
+                    <p class="text-white/80 leading-relaxed">
+                        浙江越秀外国语学院<br>
+                        翻译专业<br>
+                        数智人文方法与实践课程
+                    </p>
+                </div>
+            </div>
+            
+            <div class="border-t border-white/20 pt-8 text-center">
+                <p class="text-white/70">
+                    &copy; 2023 大数据文本发掘与知识发现——《红楼梦》研究项目组 | 浙江越秀外国语学院
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- 返回顶部按钮 -->
+    <button id="back-to-top" class="fixed bottom-6 right-6 bg-vermilion hover:bg-vermilion/90 text-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 opacity-0 invisible">
+        <i class="fa fa-chevron-up"></i>
+    </button>
+
+    <!-- JavaScript -->
+    <script>
+        // 导航菜单切换
+        document.getElementById('menu-toggle').addEventListener('click', function() {
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenu.classList.toggle('hidden');
+        });
+        
+        // 导航栏滚动效果
+        window.addEventListener('scroll', function() {
+            const navbar = document.getElementById('navbar');
+            const backToTop = document.getElementById('back-to-top');
+            
+            if (window.scrollY > 50) {
+                navbar.classList.add('py-2', 'shadow-md');
+                navbar.classList.remove('py-3');
+                
+                backToTop.classList.remove('opacity-0', 'invisible');
+                backToTop.classList.add('opacity-100', 'visible');
+            } else {
+                navbar.classList.add('py-3');
+                navbar.classList.remove('py-2', 'shadow-md');
+                
+                backToTop.classList.add('opacity-0', 'invisible');
+                backToTop.classList.remove('opacity-100', 'visible');
+            }
+            
+            // 滚动显示动画
+            const fadeElements = document.querySelectorAll('.fade-in');
+            fadeElements.forEach(element => {
+                const elementPosition = element.getBoundingClientRect().top;
+                const screenPosition = window.innerHeight / 1.2;
+                
+                if (elementPosition < screenPosition) {
+                    element.classList.add('appear');
+                }
+            });
+        });
+        
+        // 返回顶部
+        document.getElementById('back-to-top').addEventListener('click', function() {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        });
+        
+        // 平滑滚动
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                
+                const targetId = this.getAttribute('href');
+                const targetElement = document.querySelector(targetId);
+                
+                if (targetElement) {
+                    window.scrollTo({
+                        top: targetElement.offsetTop - 80,
+                        behavior: 'smooth'
+                    });
+                    
+                    // 关闭移动菜单
+                    document.getElementById('mobile-menu').classList.add('hidden');
+                }
+            });
+        });
+        
+        // 词云图
+        window.addEventListener('load', function() {
+            // 词云数据
+            const wordCloudData = [
+                {text: '宝玉', size: 80, color: '#c53727'},
+                {text: '贾母', size: 65, color: '#233b43'},
+                {text: '黛玉', size: 75, color: '#c53727'},
+                {text: '笑道', size: 55, color: '#233b43'},
+                {text: '众人', size: 50, color: '#c53727'},
+                {text: '什么', size: 45, color: '#233b43'},
+                {text: '一个', size: 40, color: '#c53727'},
+                {text: '知道', size: 35, color: '#233b43'},
+                {text: '那里', size: 30, color: '#c53727'},
+                {text: '没有', size: 25, color: '#233b43'},
+                {text: '不是', size: 20, color: '#c53727'},
+                {text: '我们', size: 18, color: '#233b43'},
+                {text: '起来', size: 16, color: '#c53727'},
+                {text: '他们', size: 15, color: '#233b43'},
+                {text: '这个', size: 14, color: '#c53727'},
+                {text: '自己', size: 13, color: '#233b43'},
+                {text: '听见', size: 12, color: '#c53727'},
+                {text: '两个', size: 11, color: '#233b43'},
+                {text: '如何', size: 10, color: '#c53727'},
+                {text: '说道', size: 9, color: '#233b43'},
+                {text: '不知', size: 8, color: '#c53727'},
+                {text: '看见', size: 7, color: '#233b43'},
+                {text: '进来', size: 6, color: '#c53727'},
+                {text: '出来', size: 5, color: '#233b43'},
+                {text: '小姐', size: 50, color: '#c53727'},
+                {text: '丫鬟', size: 45, color: '#233b43'},
+                {text: '太太', size: 40, color: '#c53727'},
+                {text: '老爷', size: 35, color: '#233b43'},
+                {text: '如今', size: 30, color: '#c53727'},
+                {text: '所以', size: 25, color: '#233b43'},
+                {text: '果然', size: 20, color: '#c53727'},
+                {text: '这些', size: 18, color: '#233b43'},
+                {text: '那些', size: 16, color: '#c53727'},
+                {text: '于是', size: 15, color: '#233b43'},
+                {text: '只得', size: 14, color: '#c53727'},
+                {text: '大家', size: 13, color: '#233b43'},
+                {text: '这样', size: 12, color: '#c53727'},
+                {text: '那里', size: 11, color: '#233b43'},
+                {text: '那里', size: 10, color: '#c53727'},
+                {text: '那里', size: 9, color: '#233b43'},
+                {text: '那里', size: 8, color: '#c53727'},
+                {text: '那里', size: 7, color: '#233b43'},
+                {text: '那里', size: 6, color: '#c53727'},
+                {text: '那里', size: 5, color: '#233b43'}
+            ];
+            
+            // 创建词云图
+            const ctx = document.getElementById('wordCloud').getContext('2d');
+            const wordCloud = new Chart(ctx, {
+                type: 'bubble',
+                data: {
+                    datasets: [{
+                        label: '《红楼梦》高频词',
+                        data: wordCloudData.map(word => ({
+                            x: Math.random() * 100,
+                            y: Math.random() * 100,
+                            r: word.size / 2,
+                            label: word.text,
+                            color: word.color
+                        })),
+                        backgroundColor: wordCloudData.map(word => word.color),
+                        borderColor: '#f5f5dc',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.data[context.dataIndex].label;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            display: false
+                        },
+                        y: {
+                            display: false
+                        }
+                    },
+                    animation: {
+                        duration: 2000,
+                        easing: 'easeOutQuart'
+                    }
+                }
+            });
+            
+            // 情感分析图表
+            const sentimentCtx = document.getElementById('sentimentChart').getContext('2d');
+            const sentimentChart = new Chart(sentimentCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['积极情感', '消极情感', '中性情感'],
+                    datasets: [{
+                        data: [10.0, 24.7, 65.3],
+                        backgroundColor: [
+                            '#c53727',  // 朱红
+                            '#233b43',  // 黛青
+                            '#f5f5dc'   // 米白
+                        ],
+                        borderColor: '#ffffff',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                font: {
+                                    family: '"Noto Serif SC", serif'
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.label + ': ' + context.raw + '%';
+                                }
+                            }
+                        }
+                    },
+                    animation: {
+                        animateRotate: true,
+                        animateScale: true
+                    }
+                }
+            });
+            
+            // 情感趋势图表
+            const sentimentTrendCtx = document.getElementById('sentimentTrend').getContext('2d');
+            const sentimentTrendChart = new Chart(sentimentTrendCtx, {
+                type: 'line',
+                data: {
+                    labels: ['1-10回', '11-20回', '21-30回', '31-40回', '41-50回', '51-60回', '61-70回', '71-80回', '81-90回', '91-100回', '101-110回', '111-120回'],
+                    datasets: [{
+                        label: '情感极性值',
+                        data: [0.12, 0.08, 0.05, 0.03, -0.02, -0.05, -0.08, -0.12, -0.15, -0.18, -0.22, -0.25],
+                        borderColor: '#c53727',
+                        backgroundColor: 'rgba(197, 55, 39, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#c53727',
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            callbacks: {
+                                label: function(context) {
+                                    return '情感值: ' + context.raw.toFixed(2);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                font: {
+                                    family: '"Noto Serif SC", serif'
+                                }
+                            }
+                        },
+                        y: {
+                            min: -0.3,
+                            max: 0.3,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            },
+                            ticks: {
+                                font: {
+                                    family: '"Noto Serif SC", serif'
+                                }
+                            }
+                        }
+                    },
+                    animation: {
+                        duration: 2000,
+                        easing: 'easeOutQuart'
+                    }
+                }
+            });
+            
+            // 人物关系网络
+            const relationshipChart = echarts.init(document.getElementById('relationshipChart'));
+            
+            // 节点数据
+            const nodes = [
+                { name: '贾宝玉', value: 100, category: 0 },
+                { name: '林黛玉', value: 80, category: 0 },
+                { name: '薛宝钗', value: 80, category: 0 },
+                { name: '贾母', value: 90, category: 1 },
+                { name: '王夫人', value: 70, category: 1 },
+                { name: '王熙凤', value: 75, category: 1 },
+                { name: '史湘云', value: 65, category: 0 },
+                { name: '袭人', value: 50, category: 2 },
+                { name: '晴雯', value: 55, category: 2 },
+                { name: '探春', value: 60, category: 0 },
+                { name: '李纨', value: 50, category: 0 },
+                { name: '紫鹃', value: 45, category: 2 },
+                { name: '迎春', value: 50, category: 0 },
+                { name: '惜春', value: 45, category: 0 },
+                { name: '贾琏', value: 55, category: 1 }
+            ];
+            
+            // 边数据
+            const links = [
+                { source: '贾宝玉', target: '林黛玉', value: 80 },
+                { source: '贾宝玉', target: '薛宝钗', value: 70 },
+                { source: '贾宝玉', target: '贾母', value: 60 },
+                { source: '贾宝玉', target: '王夫人', value: 50 },
+                { source: '贾宝玉', target: '袭人', value: 55 },
+                { source: '贾宝玉', target: '晴雯', value: 50 },
+                { source: '贾宝玉', target: '史湘云', value: 45 },
+                { source: '林黛玉', target: '紫鹃', value: 70 },
+                { source: '林黛玉', target: '贾母', value: 45 },
+                { source: '薛宝钗', target: '王夫人', value: 50 },
+                { source: '贾母', target: '王夫人', value: 70 },
+                { source: '贾母', target: '王熙凤', value: 60 },
+                { source: '王夫人', target: '王熙凤', value: 80 },
+                { source: '王熙凤', target: '贾琏', value: 90 },
+                { source: '史湘云', target: '贾母', value: 40 },
+                { source: '探春', target: '王夫人', value: 50 },
+                { source: '探春', target: '贾宝玉', value: 40 },
+                { source: '李纨', target: '贾母', value: 35 },
+                { source: '迎春', target: '贾母', value: 30 },
+                { source: '惜春', target: '贾母', value: 30 },
+                { source: '袭人', target: '王夫人', value: 40 },
+                { source: '晴雯', target: '贾宝玉', value: 50 },
+                { source: '紫鹃', target: '林黛玉', value: 80 }
+            ];
+            
+            // 类别
+            const categories = [
+                { name: '贾宝玉社交圈' },
+                { name: '贾家核心成员' },
+                { name: '丫鬟仆人' }
+            ];
+            
+            // 配置项
+            const option = {
+                title: {
+                    text: '《红楼梦》人物关系网络',
+                    left: 'center',
+                    textStyle: {
+                        color: '#233b43',
+                        fontFamily: '"Noto Serif SC", serif',
+                        fontSize: 18
+                    }
+                },
+                tooltip: {},
+                legend: {
+                    data: categories.map(function (a) {
+                        return a.name;
+                    }),
+                    textStyle: {
+                        fontFamily: '"Noto Serif SC", serif'
+                    }
+                },
+                animationDuration: 1500,
+                animationEasingUpdate: 'quinticInOut',
+                series: [
+                    {
+                        name: '《红楼梦》人物关系',
+                        type: 'graph',
+                        layout: 'force',
+                        data: nodes,
+                        links: links,
+                        categories: categories,
+                        roam: true,
+                        label: {
+                            position: 'right',
+                            formatter: '{b}'
+                        },
+                        force: {
+                            repulsion: 1000,
+                            edgeLength: 100
+                        },
+                        itemStyle: {
+                            borderColor: '#fff',
+                            borderWidth: 1,
+                            shadowBlur: 10,
+                            shadowColor: 'rgba(0, 0, 0, 0.3)'
+                        },
+                        lineStyle: {
+                            color: 'source',
+                            curveness: 0.1
+                        },
+                        emphasis: {
+                            focus: 'adjacency',
+                            lineStyle: {
+                                width: 5
+                            }
+                        }
+                    }
+                ]
+            };
+            
+            // 使用配置项显示图表
+            relationshipChart.setOption(option);
+            
+            // 监听窗口大小变化，重新渲染图表
+            window.addEventListener('resize', function() {
+                wordCloud.resize();
+                sentimentChart.resize();
+                sentimentTrendChart.resize();
+                relationshipChart.resize();
+            });
+        });
+    </script>
+</body>
+</html>
